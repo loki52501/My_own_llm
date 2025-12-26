@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Models and Data
+models/checkpoints/*
+models/final/*
+models/quantized/*
+data/raw/*
+data/processed/*
+cache/*
+*.bin
+*.safetensors
+*.gguf
+*.pth
+*.pt
+
+# Logs
+logs/
+*.log
+wandb/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Keep directory structure
+!**/.gitkeep
