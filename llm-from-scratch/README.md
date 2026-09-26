@@ -47,24 +47,7 @@ On a T4 GPU it takes about 20–30 minutes in total. It provides the books the s
 ## Running on Colab
 
 1. Click the badge above. Then choose `Runtime → Change runtime type → T4 GPU`.
-2. Provide your books (`txt-files.tar`, a tar of `.txt` files) in **one** of these ways:
-   - **Upload** — run the notebook and an upload button appears when the tar isn't found.
-   - **Google Drive** — put it at `MyDrive/llm_from_scratch/txt-files.tar` and set `USE_GOOGLE_DRIVE = True`.
-   - **This repo** — commit it as `llm-from-scratch/data/txt-files.tar` (100 MB max per file on GitHub). The notebook downloads it from the raw GitHub URL.
-   - Nothing provided? The notebook downloads a few public-domain Gutenberg books instead.
+2. The books come from the Hugging Face dataset [`Lokeshlks/gutenberg_books_text`](https://huggingface.co/datasets/Lokeshlks/gutenberg_books_text), which holds `txt-files.tar` (about 30 GB of Project Gutenberg books). The notebooks **stream** the tar and stop after `MAX_MB` of English text (100 MB on GPU), so there's no 30 GB download. Headers and licences are stripped, and the text is cached in `corpus_<MAX_MB>MB.txt`. To use a local copy instead, set `DATA_SOURCE = "local"`.
 3. `Runtime → Run all`. The default GPU model has about 11M parameters and trains in roughly 10–20 minutes on a T4.
-
-## Adding your tar file to the repo (from Windows)
-
-```bash
-git clone https://github.com/loki52501/My_own_llm.git
-cd My_own_llm
-copy F:\llm_from_scratch\txt-files.tar llm-from-scratch\data\
-git add llm-from-scratch/data/txt-files.tar
-git commit -m "Add training books"
-git push
-```
-
-If the file is over 100 MB, use Google Drive instead, or [Git LFS](https://git-lfs.com/).
 
 It also runs locally on a CPU (`pip install torch matplotlib jupyter`), using a much smaller model.
