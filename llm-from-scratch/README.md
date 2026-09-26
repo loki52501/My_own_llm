@@ -4,7 +4,7 @@ This folder has two notebooks, and both use only PyTorch:
 
 | Notebook | What it builds |
 |---|---|
-| [`LLM_From_Scratch.ipynb`](LLM_From_Scratch.ipynb) | a GPT that streams and reads **all ~30 GB** of your books: tokenizer → attention → resumable training → generation |
+| [`LLM_From_Scratch.ipynb`](LLM_From_Scratch.ipynb) | a GPT that streams **every `.txt` file** (~30 GB) batch by batch: tokenizer → attention → resumable training → generation |
 | [`Reasoning_Model_From_Scratch.ipynb`](Reasoning_Model_From_Scratch.ipynb) | a small **reasoning model** (`<think>…</think><answer>…</answer>`) built from the same books with pretraining → SFT → GRPO reinforcement learning → majority voting |
 
 ## Notebook 1: LLM from Scratch
@@ -46,19 +46,22 @@ On a T4 GPU it takes about 20–30 minutes in total. It provides the books the s
 
 ## Running on Colab
 
-**Data.** The data is the Hugging Face dataset [`Lokeshlks/gutenberg_books_text`](https://huggingface.co/datasets/Lokeshlks/gutenberg_books_text): `txt-files.tar`, about 30 GB of Project Gutenberg books. Notebook 1 reads **every `.txt` file** by **streaming** the tar during training. It keeps English books, strips the Gutenberg licence text, and tokenizes on the fly through a shuffle buffer. Nothing is downloaded up front.
+**Data.** The data is the Hugging Face dataset [`Lokeshlks/gutenberg_books_text`](https://huggingface.co/datasets/Lokeshlks/gutenberg_books_text): `txt-files.tar`, about 30 GB. Notebook 1 streams **every `.txt` file** in the tar, batch by batch, from the first byte to the last:
+- All languages are included, and no files are held out. Only the Gutenberg licence boilerplate is stripped.
+- A background worker downloads and tokenizes the next batches while the GPU trains.
+- Memory holds only the current file and a shuffle buffer; nothing is downloaded up front.
 
 **Order:**
 1. **`LLM_From_Scratch.ipynb` (T4 GPU):**
-   - It mounts Google Drive and trains for `SESSION_HOURS` (3 h by default).
-   - It saves the tokenizer, the checkpoint and the **byte position in the tar** to `MyDrive/llm_from_scratch/`.
-   - **Run it again to continue** where it stopped. It resumes with an HTTP range request, until every book has been read. A full pass (≈8B tokens) takes roughly 15–20 T4-hours in total.
-2. **`Reasoning_Model_From_Scratch.ipynb`:** it loads notebook 1's tokenizer and model from Drive as its pretrained base, then runs SFT → GRPO → majority voting (~20–30 min). You can run it after any number of notebook-1 sessions. The more books the base has read, the better. If no base is found, it does a short streaming pretraining itself.
+   - It trains until the stream reaches **the end of the tar**. The whole tar is ≈8B tokens, roughly 15–20 T4-hours.
+   - Every 15 minutes it saves the model, the optimizer and the **byte position in the tar** to `MyDrive/llm_from_scratch/`.
+   - When Colab disconnects, just **Run all** again: it resumes at that byte with an HTTP range request.
+2. **`Reasoning_Model_From_Scratch.ipynb`:** it loads notebook 1's tokenizer and model from Drive as its pretrained base, then runs SFT → GRPO → majority voting (~20–30 min). If no base is found, it does a short streaming pretraining itself.
 
-**Useful settings:**
-- `SESSION_HOURS`: how long each run trains before it saves and stops.
-- `ENGLISH_ONLY`: keep only English books.
-- `SAMPLE_MB`: size of the sample used for the tokenizer and validation.
-- `VAL_EVERY`: 1 in N books is held out for validation.
+**Settings in notebook 1:**
+- `SESSION_HOURS`: `None` means run to the end of the tar; a number stops early.
+- `ENGLISH_ONLY`: `False` uses every file.
+- `VAL_EVERY`: `None` trains on 100% of the files; `200` holds out 1 in 200.
+- `CKPT_MINUTES`: how often to save.
 
 It also runs locally on a CPU (`pip install torch matplotlib jupyter`), using a much smaller model.
