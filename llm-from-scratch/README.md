@@ -17,13 +17,13 @@ This folder has two notebooks, and both use only PyTorch:
 |---|---|---|
 | 1 | Load the books | extract `txt-files.tar`, clean it, join the books with `<|endoftext|>` |
 | 2 | Tokenizer | a character tokenizer, then a byte-level **BPE** tokenizer trained on your books |
-| 3 | Dataset | a sliding-window `Dataset`/`DataLoader` where the target is the input shifted by one |
+| 3 | Dataset | a sliding-window `Dataset`, then the **whole tar** streamed batch by batch into `tokens.bin` (every `.txt` file) |
 | 4 | Embeddings | token + positional embeddings |
 | 5 | Self-attention | Q/K/V by hand, the causal mask, an attention heatmap, multi-head attention |
 | 6 | GPT model | LayerNorm, GELU, MLP, residuals, the Transformer block, the full GPT |
 | 7–8 | Training | AdamW, warm-up + cosine LR, gradient clipping, mixed precision, loss curves |
 | 9 | Generation | temperature and top-k sampling, attention maps, embedding neighbours |
-| 10 | Save / load | checkpoint + tokenizer (optionally to Google Drive) |
+| 10 | Save / download | model + tokenizer, downloaded for the reasoning notebook |
 
 ## Notebook 2: Reasoning Model from Scratch
 
