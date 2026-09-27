@@ -46,16 +46,21 @@ On a T4 GPU it takes about 20–30 minutes in total. It provides the books the s
 
 ## Running on Colab
 
-**Data.** The data is the Hugging Face dataset [`Lokeshlks/gutenberg_books_text`](https://huggingface.co/datasets/Lokeshlks/gutenberg_books_text): `txt-files.tar`, about 30 GB. Google Drive is not needed.
+**Data.** The data is the Hugging Face dataset [`Lokeshlks/gutenberg_books_text`](https://huggingface.co/datasets/Lokeshlks/gutenberg_books_text): `txt-files.tar`, about 30 GB. Every `.txt` file is used.
 
-**Notebook 1 (`LLM_From_Scratch.ipynb`, Colab Pro GPU):**
-1. **Section 3b** streams the **entire tar**, 256 files per batch. It tokenizes each batch in parallel on all CPU cores and appends the token ids to `llm_work/tokens.bin` on the runtime's local disk (≈16 GB).
-   - Every `.txt` file is included, in all languages. Only the Gutenberg licence boilerplate is stripped.
-   - It prints progress with an ETA, then the final totals: files, GB and tokens.
-   - It takes about 1–2 hours and is resumable within the runtime.
-2. **Section 8** trains on the whole `tokens.bin` (memory-mapped). One pass visits **every window exactly once**, in shuffled order, batch by batch. Progress shows as "% of corpus".
-3. **Section 10** downloads `gpt_from_scratch.pt` + `tokenizer.json` to your computer.
+**Survives reloads and disconnects.** The long work runs in `run.py`, a **background process** on the Colab machine, not in a notebook cell. Page reloads, closed tabs and kernel crashes don't stop it. Progress is saved to a **private Hugging Face repo** (`<you>/llm-from-scratch-run`), so a new runtime continues where the old one stopped. Google Drive isn't used.
 
-**Notebook 2 (`Reasoning_Model_From_Scratch.ipynb`):** section 4 has an **upload button** for those two files. With them, notebook 1's model is the pretrained base for SFT → GRPO → majority voting. If you cancel the upload, it does a short streaming pretraining instead.
+**One-time setup.** Create a Hugging Face token with *write* access, then add it in Colab under 🔑 **Secrets** as `HF_TOKEN`, with notebook access enabled.
+
+**Notebook 1 (`LLM_From_Scratch.ipynb`):**
+1. **Run all.** Sections 1–7 build and explain everything. The tokenizer is trained once and saved to HF.
+2. **Section 8, launch cell:** starts `run.py`, which
+   - **prepares** the data: it streams every `.txt` file of the tar (256 files per batch), tokenizes on all CPU cores and uploads 1 GB token shards plus `progress.json` to HF;
+   - **trains** on every window of every shard exactly once, checkpointing to HF every `CKPT_MINUTES`.
+3. **Monitor cell:** shows the live log. Re-run it any time; stopping it doesn't stop training.
+4. **If the runtime is recycled:** Run all again. The shards and checkpoint are downloaded and the job continues.
+5. **When it says TRAINING DONE:** load the weights (end of section 8), then generate text (section 9).
+
+**Notebook 2 (`Reasoning_Model_From_Scratch.ipynb`):** it downloads notebook 1's model from the same HF repo automatically (or shows an upload button), then runs SFT → GRPO → majority voting.
 
 It also runs locally on a CPU (`pip install torch matplotlib jupyter`), using a much smaller model.
